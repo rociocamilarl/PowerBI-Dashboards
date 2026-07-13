@@ -1,0 +1,25 @@
+﻿Prestación_1;DescripcionExamen;Área;Precio Lista
+HEM-001;Hemograma completo;Hematología;8900
+HEM-002;Perfil de coagulación;Hematología;12400
+QUI-001;Perfil bioquímico;Química Clínica;14900
+QUI-002;Perfil lipídico;Química Clínica;9800
+QUI-003;Glicemia;Química Clínica;4200
+QUI-004;Perfil hepático;Química Clínica;11600
+QUI-005;Creatinina;Química Clínica;4600
+END-001;TSH;Endocrinología;8700
+END-002;Perfil tiroideo;Endocrinología;16800
+END-003;Insulina basal;Endocrinología;9900
+INM-001;Vitamina D;Inmunología;15400
+INM-002;PCR ultrasensible;Inmunología;7800
+INM-003;Panel alergias;Inmunología;32500
+MIC-001;Urocultivo;Microbiología;9200
+MIC-002;Coprocultivo;Microbiología;10800
+MIC-003;Test rápido Streptococo;Microbiología;8100
+ORI-001;Orina completa;Orina;5300
+IMG-001;Radiografía de tórax;Imagenología;18900
+IMG-002;Ecografía abdominal;Imagenología;34500
+IMG-003;Mamografía;Imagenología;29800
+GEN-001;Test PCR respiratorio;Biología Molecular;24900
+GEN-002;Panel genético básico;Biología Molecular;58000
+TOM-001;Toma de muestra domicilio;Servicios;7500
+KIN-001;Electrocardiograma;Cardiología;13200

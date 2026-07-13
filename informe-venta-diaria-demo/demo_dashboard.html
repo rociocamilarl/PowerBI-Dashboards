@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe de Venta Diaria — Laboratorio Clínico (DEMO)</title>
+<style>
+  :root {
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10); --s1: #2a78d6; --s2: #1baf7a;
+    --good: #006300; --bad: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+      --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+      --border: rgba(255,255,255,0.10); --s1: #3987e5; --s2: #199e70;
+      --good: #0ca30c; --bad: #e66767;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 24px; max-width: 1180px; margin: 0 auto;
+  }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; margin-bottom: 6px; }
+  h1 { font-size: 20px; font-weight: 650; }
+  .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 3px 8px;
+    border-radius: 999px; border: 1px solid var(--border); color: var(--ink-2);
+  }
+  .sub { color: var(--ink-2); margin-bottom: 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .tile .lbl { font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+  .tile .val { font-size: 26px; font-weight: 650; }
+  .tile .cmp { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .up { color: var(--good); } .down { color: var(--bad); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .card h2 { font-size: 14px; font-weight: 650; margin-bottom: 2px; }
+  .card .note { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .ln { width: 14px; height: 0; border-top: 2px dashed var(--muted); display: inline-block; }
+  svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
+  svg .dlab { fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  th.n, td.n { text-align: right; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--grid); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .bar-in-cell { height: 6px; border-radius: 3px; background: var(--s1); display: inline-block; vertical-align: middle; }
+  #tip {
+    position: fixed; pointer-events: none; display: none; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  #tip b { display: block; margin-bottom: 2px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Informe de Venta Diaria — Laboratorio Clínico</h1>
+  <span class="badge">DEMO · DATOS FICTICIOS</span>
+</header>
+<p class="sub">Réplica de portafolio de un informe productivo de venta diaria (Power BI). Corte: <b id="corte"></b></p>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="card">
+  <h2>Venta diaria — julio 2026</h2>
+  <div class="note">Barras: venta neta por día · línea: venta diaria requerida para cumplir el presupuesto del mes</div>
+  <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Venta neta</span><span><i class="ln"></i>Requerida ($ <span id="reqLbl"></span> M)</span></div>
+  <svg id="chDaily" width="100%" viewBox="0 0 1120 260" role="img" aria-label="Venta diaria de julio 2026 contra la venta diaria requerida"></svg>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Cumplimiento de presupuesto por sede</h2>
+    <div class="note">% del presupuesto prorrateado al 12 de julio (100% = en meta)</div>
+    <svg id="chSedes" width="100%" viewBox="0 0 540 300" role="img" aria-label="Cumplimiento porcentual por sede"></svg>
+  </div>
+  <div class="card">
+    <h2>Venta por cliente / convenio — julio (MTD)</h2>
+    <div class="note">Monto neto acumulado del mes y exámenes realizados</div>
+    <table id="tbConv">
+      <thead><tr><th>Cliente</th><th class="n">Q</th><th class="n">Monto neto</th><th>Participación</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Venta mensual vs. presupuesto — últimos 13 meses</h2>
+  <div class="note">Julio 2026 es un mes parcial (12 de 31 días)</div>
+  <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Venta neta</span><span><i class="ln"></i>Presupuesto</span></div>
+  <svg id="chMonthly" width="100%" viewBox="0 0 1120 240" role="img" aria-label="Venta mensual contra presupuesto de los últimos trece meses"></svg>
+</div>
+
+<footer>
+  Todos los datos (clientes, sedes, montos y volúmenes) son <b>ficticios</b>, generados con un script reproducible
+  (<code>datos_ficticios/</code>). La estructura del modelo replica el informe productivo: Ventas · Sedes · Clientes ·
+  Exámenes · Presupuesto $ / Q · Calendario. — DataconsultingRRL
+</footer>
+<div id="tip"></div>
+
+<script>
+const DATA = {"dailyJul":[{"d":"2026-07-01","v":3799842,"q":272},{"d":"2026-07-02","v":5241747,"q":315},{"d":"2026-07-03","v":4196680,"q":303},{"d":"2026-07-04","v":2435216,"q":166},{"d":"2026-07-05","v":200438,"q":20},{"d":"2026-07-06","v":4993486,"q":326},{"d":"2026-07-07","v":4599610,"q":281},{"d":"2026-07-08","v":5657435,"q":349},{"d":"2026-07-09","v":4831068,"q":299},{"d":"2026-07-10","v":3109229,"q":240},{"d":"2026-07-11","v":2570187,"q":150},{"d":"2026-07-12","v":322222,"q":23}],"sedesMTD":[{"s":"Santiago Centro","z":"Zona Centro","v":7569849,"pptoMes":23573228,"cumpl":83.0},{"s":"Providencia","z":"Zona Centro","v":8901648,"pptoMes":18051432,"cumpl":127.4},{"s":"Las Condes","z":"Zona Centro","v":5456049,"pptoMes":19342235,"cumpl":72.9},{"s":"Maipú","z":"Zona Centro","v":5458226,"pptoMes":11280475,"cumpl":125.0},{"s":"Viña del Mar","z":"Zona Costa","v":5285025,"pptoMes":11274579,"cumpl":121.1},{"s":"Valparaíso","z":"Zona Costa","v":3188584,"pptoMes":8410176,"cumpl":97.9},{"s":"Concepción","z":"Zona Sur","v":4033491,"pptoMes":11169138,"cumpl":93.3},{"s":"Antofagasta","z":"Zona Norte","v":2064288,"pptoMes":6744181,"cumpl":79.1}],"convMTD":[{"c":"Particular","v":12303035,"q":750},{"c":"Fonasa","v":8032873,"q":565},{"c":"Isapre Andina","v":6022068,"q":373},{"c":"Isapre Cumbre","v":3645678,"q":264},{"c":"Constructora Pacífico Ltda.","v":2637645,"q":136},{"c":"Minera Norte SpA","v":2489153,"q":183},{"c":"Municipalidad Demo","v":1728707,"q":113},{"c":"Centro Deportivo Cordillera","v":1615674,"q":86},{"c":"Seguro Vida Austral","v":1081106,"q":94},{"c":"Logística del Sur S.A.","v":1002807,"q":86},{"c":"Colegio San Martín","v":974845,"q":66},{"c":"Clínica Asociada","v":423569,"q":28}],"monthly":[{"m":"2025-07","v":99859498,"ppto":104852472},{"m":"2025-08","v":93918030,"ppto":98613931},{"m":"2025-09","v":102835601,"ppto":107977381},{"m":"2025-10","v":107081905,"ppto":112436000},{"m":"2025-11","v":94976412,"ppto":99725232},{"m":"2025-12","v":111036783,"ppto":116588622},{"m":"2026-01","v":109142934,"ppto":101649563},{"m":"2026-02","v":96514997,"ppto":98438805},{"m":"2026-03","v":110706030,"ppto":99025971},{"m":"2026-04","v":113018774,"ppto":105849416},{"m":"2026-05","v":106711337,"ppto":111457016},{"m":"2026-06","v":109847630,"ppto":103066029},{"m":"2026-07","v":41957160,"ppto":109845444}],"kpi":{"reqDiaria":3543401,"pptoJul":109845444,"fecha":"2026-07-12","ventaDia":322222,"qDia":23,"mtd":41957160,"mtdQ":2744,"cumplMTD":98.7,"varAnoAnt":7.0}};
+
+const $ = s => document.querySelector(s);
+const clp = n => "$ " + Math.round(n).toLocaleString("es-CL");
+const mm  = n => "$ " + (n/1e6).toLocaleString("es-CL", {maximumFractionDigits:1}) + " M";
+const MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+// ---- KPIs ----
+const K = DATA.kpi;
+const dow = new Date(K.fecha + "T12:00:00").toLocaleDateString("es-CL", {weekday:"long"});
+$("#corte").textContent = new Date(K.fecha + "T12:00:00").toLocaleDateString("es-CL", {day:"numeric", month:"long", year:"numeric"});
+$("#reqLbl").textContent = (K.reqDiaria/1e6).toLocaleString("es-CL", {maximumFractionDigits:1});
+$("#kpis").innerHTML = [
+  {l:"Venta del día (" + dow + ")", v: clp(K.ventaDia), c: K.qDia + " exámenes"},
+  {l:"Venta acumulada del mes", v: mm(K.mtd), c: K.mtdQ.toLocaleString("es-CL") + " exámenes · PPTO mes " + mm(K.pptoJul)},
+  {l:"Cumplimiento PPTO (MTD)", v: K.cumplMTD.toLocaleString("es-CL") + "%",
+   c:'<span class="' + (K.cumplMTD >= 100 ? "up" : "down") + '">' + (K.cumplMTD >= 100 ? "▲ sobre" : "▼ bajo") + " la meta prorrateada</span>"},
+  {l:"Variación vs. año anterior", v:'<span class="' + (K.varAnoAnt >= 0 ? "up" : "down") + '">' + (K.varAnoAnt >= 0 ? "+" : "") + K.varAnoAnt.toLocaleString("es-CL") + "%</span>", c:"mismo periodo de julio 2025"},
+].map(t => '<div class="tile"><div class="lbl">' + t.l + '</div><div class="val">' + t.v + '</div><div class="cmp">' + t.c + "</div></div>").join("");
+
+// ---- tooltip ----
+const tip = $("#tip");
+function bindTips(svg) {
+  svg.addEventListener("mousemove", e => {
+    const t = e.target.closest("[data-tip]");
+    if (!t) { tip.style.display = "none"; return; }
+    tip.innerHTML = t.dataset.tip;
+    tip.style.display = "block";
+    const w = tip.offsetWidth;
+    tip.style.left = Math.min(e.clientX + 12, innerWidth - w - 8) + "px";
+    tip.style.top = (e.clientY - tip.offsetHeight - 10) + "px";
+  });
+  svg.addEventListener("mouseleave", () => tip.style.display = "none");
+}
+
+// ---- gráfico 1: venta diaria ----
+(function () {
+  const W = 1120, H = 260, P = {t: 14, r: 12, b: 26, l: 52};
+  const d = DATA.dailyJul, step = 2e6;
+  const max = Math.ceil(Math.max(...d.map(x => x.v), K.reqDiaria) * 1.05 / step) * step;
+  const iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const bw = Math.min(46, iw / d.length - 10);
+  const y = v => P.t + ih * (1 - v / max);
+  let s = "";
+  for (let v = 0; v <= max; v += step) {
+    s += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`
+       + `<text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${(v/1e6).toFixed(0)} M</text>`;
+  }
+  d.forEach((x, i) => {
+    const cx = P.l + iw / d.length * (i + .5);
+    const h = ih * x.v / max, day = +x.d.slice(8);
+    s += `<rect x="${cx - bw/2}" y="${y(x.v)}" width="${bw}" height="${Math.max(h,1)}" rx="4" fill="var(--s1)"
+           data-tip="<b>${day} de julio</b>${clp(x.v)}<br>${x.q} exámenes · ${(x.v/K.reqDiaria*100).toFixed(0)}% de la requerida"/>`;
+    s += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${day}</text>`;
+  });
+  s += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(K.reqDiaria)}" y2="${y(K.reqDiaria)}" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  s += `<line x1="${P.l}" x2="${W - P.r}" y1="${P.t + ih}" y2="${P.t + ih}" stroke="var(--axis)"/>`;
+  $("#chDaily").innerHTML = s; bindTips($("#chDaily"));
+})();
+
+// ---- gráfico 2: cumplimiento por sede ----
+(function () {
+  const W = 540, H = 300, P = {t: 8, r: 64, b: 22, l: 120};
+  const d = DATA.sedesMTD, max = Math.max(...d.map(x => x.cumpl), 110) * 1.05;
+  const iw = W - P.l - P.r, ih = H - P.t - P.b, rh = ih / d.length;
+  const x = v => P.l + iw * v / max;
+  let s = "";
+  d.forEach((sd, i) => {
+    const cy = P.t + rh * i + rh / 2, bh = Math.min(18, rh - 8);
+    s += `<text x="${P.l - 8}" y="${cy + 4}" text-anchor="end" class="dlab">${sd.s}</text>`;
+    s += `<rect x="${P.l}" y="${cy - bh/2}" width="${Math.max(x(sd.cumpl) - P.l, 1)}" height="${bh}" rx="4" fill="var(--s1)"
+           data-tip="<b>${sd.s} · ${sd.z}</b>${clp(sd.v)} MTD<br>PPTO mes: ${mm(sd.pptoMes)} · cumplimiento ${sd.cumpl.toLocaleString("es-CL")}%"/>`;
+    s += `<text x="${x(sd.cumpl) + 6}" y="${cy + 4}" class="dlab">${sd.cumpl.toLocaleString("es-CL")}%</text>`;
+  });
+  s += `<line x1="${x(100)}" x2="${x(100)}" y1="${P.t}" y2="${P.t + ih}" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  s += `<text x="${x(100)}" y="${H - 4}" text-anchor="middle">100%</text>`;
+  $("#chSedes").innerHTML = s; bindTips($("#chSedes"));
+})();
+
+// ---- tabla convenios ----
+(function () {
+  const tot = DATA.convMTD.reduce((a, c) => a + c.v, 0);
+  const maxv = DATA.convMTD[0].v;
+  $("#tbConv tbody").innerHTML = DATA.convMTD.map(c =>
+    `<tr><td>${c.c}</td><td class="n">${c.q.toLocaleString("es-CL")}</td><td class="n">${clp(c.v)}</td>
+     <td><span class="bar-in-cell" style="width:${Math.max(c.v/maxv*90, 2)}px"></span>
+     <span style="font-size:12px;color:var(--muted)"> ${(c.v/tot*100).toFixed(1)}%</span></td></tr>`).join("");
+})();
+
+// ---- gráfico 3: mensual vs PPTO ----
+(function () {
+  const W = 1120, H = 240, P = {t: 14, r: 12, b: 26, l: 52};
+  const d = DATA.monthly, step = 40e6;
+  const max = Math.ceil(Math.max(...d.map(x => Math.max(x.v, x.ppto))) * 1.05 / step) * step;
+  const iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const bw = Math.min(40, iw / d.length - 12);
+  const y = v => P.t + ih * (1 - v / max);
+  let s = "";
+  for (let v = 0; v <= max; v += step) {
+    s += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>`
+       + `<text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${(v/1e6).toFixed(0)} M</text>`;
+  }
+  d.forEach((x, i) => {
+    const cx = P.l + iw / d.length * (i + .5);
+    const parcial = x.m === "2026-07";
+    const lbl = MES[+x.m.slice(5) - 1] + " " + x.m.slice(2, 4);
+    s += `<rect x="${cx - bw/2}" y="${y(x.v)}" width="${bw}" height="${Math.max(ih * x.v / max,1)}" rx="4"
+           fill="var(--s1)" ${parcial ? 'opacity="0.45"' : ""}
+           data-tip="<b>${lbl}${parcial ? " (parcial)" : ""}</b>Venta: ${mm(x.v)}<br>PPTO: ${mm(x.ppto)} · ${(x.v/x.ppto*100).toFixed(0)}%"/>`;
+    s += `<line x1="${cx - bw/2 - 4}" x2="${cx + bw/2 + 4}" y1="${y(x.ppto)}" y2="${y(x.ppto)}" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>`;
+    s += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${lbl}</text>`;
+  });
+  s += `<line x1="${P.l}" x2="${W - P.r}" y1="${P.t + ih}" y2="${P.t + ih}" stroke="var(--axis)"/>`;
+  $("#chMonthly").innerHTML = s; bindTips($("#chMonthly"));
+})();
+</script>
+</body>
+</html>
